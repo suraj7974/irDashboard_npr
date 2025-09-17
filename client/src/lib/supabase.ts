@@ -12,6 +12,6 @@ export const STORAGE_BUCKETS = {
 
 // Database table names
 export const TABLES = {
-  IR_REPORTS: "ir_reports",
+  IR_REPORTS: "ir_reports_npr",
   PROFILES: "profiles",
 } as const;
