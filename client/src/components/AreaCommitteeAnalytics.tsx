@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { AlertCircle, Users, FileText, Search, Eye, MapPin, Shield, Building } from "lucide-react";
+import {
+  AlertCircle,
+  Users,
+  FileText,
+  Search,
+  Eye,
+  MapPin,
+  Shield,
+  Building,
+} from "lucide-react";
 import { IRReportAPI } from "../api/reports";
 import { IRReport } from "../types";
+import ReportDetailModal from "./ReportDetailModal";
 
 interface SimpleAreaCommittee {
   ac_name: string;
@@ -14,20 +24,41 @@ interface ACDetailsModalProps {
   ac: SimpleAreaCommittee | null;
   isOpen: boolean;
   onClose: () => void;
+  onReportClick: (reportName: string) => void;
 }
 
 // Modal component for AC details
-function ACDetailsModal({ ac, isOpen, onClose }: ACDetailsModalProps) {
+function ACDetailsModal({
+  ac,
+  isOpen,
+  onClose,
+  onReportClick,
+}: ACDetailsModalProps) {
   if (!isOpen || !ac) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-bold text-gray-900">Area Committee Details</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <h2 className="text-xl font-bold text-gray-900">
+            Area Committee Details
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -35,7 +66,9 @@ function ACDetailsModal({ ac, isOpen, onClose }: ACDetailsModalProps) {
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-4">
             <h3 className="text-2xl font-bold text-gray-900">{ac.ac_name}</h3>
-            <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">Area Committee</span>
+            <span className="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+              Area Committee
+            </span>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -47,7 +80,10 @@ function ACDetailsModal({ ac, isOpen, onClose }: ACDetailsModalProps) {
               </h4>
               <div className="space-y-2">
                 {ac.people.map((person, index) => (
-                  <div key={index} className="bg-white rounded px-3 py-2 border">
+                  <div
+                    key={index}
+                    className="bg-white rounded px-3 py-2 border"
+                  >
                     <span className="font-medium text-gray-900">{person}</span>
                   </div>
                 ))}
@@ -62,8 +98,17 @@ function ACDetailsModal({ ac, isOpen, onClose }: ACDetailsModalProps) {
               </h4>
               <div className="space-y-2">
                 {ac.reports.map((report, index) => (
-                  <div key={index} className="bg-white rounded px-3 py-2 border">
-                    <span className="text-sm text-gray-700">{report}</span>
+                  <div
+                    key={index}
+                    className="bg-white rounded px-3 py-2 border"
+                  >
+                    <span
+                      onClick={() => onReportClick(report)}
+                      className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer underline transition-colors"
+                      title="Click to view full IR report"
+                    >
+                      {report}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -94,8 +139,13 @@ export default function AreaCommitteeAnalytics() {
   const [acs, setAcs] = useState<SimpleAreaCommittee[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedAC, setSelectedAC] = useState<SimpleAreaCommittee | null>(null);
+  const [selectedAC, setSelectedAC] = useState<SimpleAreaCommittee | null>(
+    null,
+  );
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<IRReport | null>(null);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportLoading, setReportLoading] = useState(false);
 
   useEffect(() => {
     loadAreaCommittees();
@@ -124,7 +174,9 @@ export default function AreaCommitteeAnalytics() {
       .trim();
   };
 
-  const extractACsFromReports = (reports: IRReport[]): SimpleAreaCommittee[] => {
+  const extractACsFromReports = (
+    reports: IRReport[],
+  ): SimpleAreaCommittee[] => {
     const acMap = new Map<string, SimpleAreaCommittee>();
 
     reports.forEach((report) => {
@@ -133,7 +185,8 @@ export default function AreaCommitteeAnalytics() {
       const personName = report.metadata.name;
 
       // Skip if person name is "Unknown" or "अज्ञात"
-      if (personName.toLowerCase() === "unknown" || personName === "अज्ञात") return;
+      if (personName.toLowerCase() === "unknown" || personName === "अज्ञात")
+        return;
 
       const reportName = report.original_filename;
 
@@ -142,7 +195,12 @@ export default function AreaCommitteeAnalytics() {
         const rawACName = report.area_committee.trim();
 
         // Skip if AC name is "Unknown", "अज्ञात", empty, or only whitespace
-        if (!rawACName || rawACName === "" || rawACName.toLowerCase() === "unknown" || rawACName === "अज्ञात") {
+        if (
+          !rawACName ||
+          rawACName === "" ||
+          rawACName.toLowerCase() === "unknown" ||
+          rawACName === "अज्ञात"
+        ) {
           return;
         }
 
@@ -171,11 +229,17 @@ export default function AreaCommitteeAnalytics() {
       }
     });
 
-    return Array.from(acMap.values()).sort((a, b) => b.people.length - a.people.length);
+    return Array.from(acMap.values()).sort(
+      (a, b) => b.people.length - a.people.length,
+    );
   };
 
   const filteredACs = acs.filter(
-    (ac) => ac.ac_name.toLowerCase().includes(searchQuery.toLowerCase()) || ac.people.some((person) => person.toLowerCase().includes(searchQuery.toLowerCase()))
+    (ac) =>
+      ac.ac_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ac.people.some((person) =>
+        person.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
   );
 
   const handleViewDetails = (ac: SimpleAreaCommittee) => {
@@ -188,11 +252,39 @@ export default function AreaCommitteeAnalytics() {
     setIsModalOpen(false);
   };
 
+  const handleReportClick = async (reportName: string) => {
+    try {
+      setReportLoading(true);
+      const reports = await IRReportAPI.getReports();
+      const targetReport = reports.find(
+        (r) => r.original_filename === reportName,
+      );
+      if (targetReport) {
+        setSelectedReport(targetReport);
+        setIsReportModalOpen(true);
+        setIsModalOpen(false); // Close the AC modal
+      } else {
+        console.warn("Report not found:", reportName);
+      }
+    } catch (error) {
+      console.error("Failed to load report:", error);
+    } finally {
+      setReportLoading(false);
+    }
+  };
+
+  const handleCloseReportModal = () => {
+    setSelectedReport(null);
+    setIsReportModalOpen(false);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-        <span className="ml-3 text-lg text-gray-600">Loading area committees...</span>
+        <span className="ml-3 text-lg text-gray-600">
+          Loading area committees...
+        </span>
       </div>
     );
   }
@@ -219,8 +311,12 @@ export default function AreaCommitteeAnalytics() {
           <div className="flex items-center">
             <MapPin className="h-8 w-8 text-green-500" />
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Area Committees</p>
-              <p className="text-2xl font-bold text-gray-900">{filteredACs.length}</p>
+              <p className="text-sm font-medium text-gray-600">
+                Total Area Committees
+              </p>
+              <p className="text-2xl font-bold text-gray-900">
+                {filteredACs.length}
+              </p>
             </div>
           </div>
         </div>
@@ -230,7 +326,9 @@ export default function AreaCommitteeAnalytics() {
             <Users className="h-8 w-8 text-blue-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total People</p>
-              <p className="text-2xl font-bold text-gray-900">{new Set(filteredACs.flatMap((ac) => ac.people)).size}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {new Set(filteredACs.flatMap((ac) => ac.people)).size}
+              </p>
             </div>
           </div>
         </div>
@@ -240,7 +338,9 @@ export default function AreaCommitteeAnalytics() {
             <FileText className="h-8 w-8 text-purple-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Reports</p>
-              <p className="text-2xl font-bold text-gray-900">{new Set(filteredACs.flatMap((ac) => ac.reports)).size}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {new Set(filteredACs.flatMap((ac) => ac.reports)).size}
+              </p>
             </div>
           </div>
         </div>
@@ -250,13 +350,20 @@ export default function AreaCommitteeAnalytics() {
       {filteredACs.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredACs.map((ac, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+            <div
+              key={index}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+            >
               <div className="p-6">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{ac.ac_name}</h3>
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Area Committee</span>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {ac.ac_name}
+                    </h3>
+                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      Area Committee
+                    </span>
                   </div>
                 </div>
 
@@ -264,7 +371,8 @@ export default function AreaCommitteeAnalytics() {
                 <div className="flex items-center text-gray-600 mb-2">
                   <Users className="w-4 h-4 mr-2" />
                   <span className="text-sm">
-                    {ac.people.length} {ac.people.length === 1 ? "Person" : "People"} Associated
+                    {ac.people.length}{" "}
+                    {ac.people.length === 1 ? "Person" : "People"} Associated
                   </span>
                 </div>
 
@@ -272,21 +380,29 @@ export default function AreaCommitteeAnalytics() {
                 <div className="flex items-center text-gray-600 mb-4">
                   <FileText className="w-4 h-4 mr-2" />
                   <span className="text-sm">
-                    {ac.reports.length} Source {ac.reports.length === 1 ? "Report" : "Reports"}
+                    {ac.reports.length} Source{" "}
+                    {ac.reports.length === 1 ? "Report" : "Reports"}
                   </span>
                 </div>
 
                 {/* People Preview */}
                 <div className="mb-4">
-                  <p className="text-sm font-medium text-gray-700 mb-2">People:</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    People:
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {ac.people.slice(0, 2).map((person, personIndex) => (
-                      <span key={personIndex} className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">
+                      <span
+                        key={personIndex}
+                        className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs"
+                      >
                         {person}
                       </span>
                     ))}
                     {ac.people.length > 2 && (
-                      <span className="inline-block bg-gray-200 text-gray-600 px-2 py-1 rounded text-xs">+{ac.people.length - 2} more</span>
+                      <span className="inline-block bg-gray-200 text-gray-600 px-2 py-1 rounded text-xs">
+                        +{ac.people.length - 2} more
+                      </span>
                     )}
                   </div>
                 </div>
@@ -306,13 +422,30 @@ export default function AreaCommitteeAnalytics() {
       ) : (
         <div className="text-center py-12">
           <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No area committees found</h3>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            No area committees found
+          </h3>
           <p className="text-gray-500">Try adjusting your search criteria</p>
         </div>
       )}
 
       {/* Modal */}
-      <ACDetailsModal ac={selectedAC} isOpen={isModalOpen} onClose={handleCloseModal} />
+      <ACDetailsModal
+        ac={selectedAC}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        onReportClick={handleReportClick}
+      />
+
+      {/* Report Detail Modal */}
+      {selectedReport && (
+        <ReportDetailModal
+          report={selectedReport}
+          isOpen={isReportModalOpen}
+          onClose={handleCloseReportModal}
+          onDownload={async () => {}} // Empty handler for host branch
+        />
+      )}
     </div>
   );
 }
