@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, Upload, Search, BarChart3, Users, Clock, AlertTriangle, TrendingUp } from "lucide-react";
+import {
+  FileText,
+  Upload,
+  Search,
+  BarChart3,
+  Users,
+  Clock,
+  AlertTriangle,
+  TrendingUp,
+} from "lucide-react";
 import FileUpload from "../components/FileUpload";
 import SearchBar from "../components/SearchBar";
 import ReportCard from "../components/ReportCard";
@@ -8,6 +17,7 @@ import ReportDetailModal from "../components/ReportDetailModal";
 import { IRReport, SearchFilters, UploadProgress } from "../types";
 import { IRReportAPI } from "../api/reports";
 import { ParserService } from "../services/parser";
+import Chatbot from "../components/Chatbot";
 
 export default function Dashboard() {
   const [reports, setReports] = useState<IRReport[]>([]);
@@ -75,104 +85,126 @@ export default function Dashboard() {
         // Helper function to search in arrays
         const searchInArray = (arr: any[] | undefined): boolean => {
           if (!arr || !Array.isArray(arr)) return false;
-          return arr.some(item => {
-            if (typeof item === 'string') {
+          return arr.some((item) => {
+            if (typeof item === "string") {
               return contains(item);
-            } else if (typeof item === 'object' && item !== null) {
+            } else if (typeof item === "object" && item !== null) {
               // Search in object properties
-              return Object.values(item).some(value => contains(value));
+              return Object.values(item).some((value) => contains(value));
             }
             return false;
           });
         };
 
         // Search in basic report fields
-        if (contains(report.original_filename) ||
-            contains(report.summary) ||
-            contains(report.police_station) ||
-            contains(report.division) ||
-            contains(report.area_committee) ||
-            contains(report.uid_for_name) ||
-            contains(report.rank)) {
+        if (
+          contains(report.original_filename) ||
+          contains(report.summary) ||
+          contains(report.police_station) ||
+          contains(report.division) ||
+          contains(report.area_committee) ||
+          contains(report.uid_for_name) ||
+          contains(report.rank)
+        ) {
           return true;
         }
 
         // Search in metadata
         if (report.metadata) {
           const metadata = report.metadata;
-          
+
           // Search in basic metadata fields
-          if (contains(metadata.name) ||
-              contains(metadata.group_battalion) ||
-              contains(metadata.area_region) ||
-              contains(metadata.supply_team_supply) ||
-              contains(metadata.ied_bomb) ||
-              contains(metadata.meeting) ||
-              contains(metadata.platoon) ||
-              contains(metadata.involvement) ||
-              contains(metadata.history) ||
-              contains(metadata.bounty) ||
-              contains(metadata.organizational_period)) {
+          if (
+            contains(metadata.name) ||
+            contains(metadata.group_battalion) ||
+            contains(metadata.area_region) ||
+            contains(metadata.supply_team_supply) ||
+            contains(metadata.ied_bomb) ||
+            contains(metadata.meeting) ||
+            contains(metadata.platoon) ||
+            contains(metadata.involvement) ||
+            contains(metadata.history) ||
+            contains(metadata.bounty) ||
+            contains(metadata.organizational_period)
+          ) {
             return true;
           }
 
           // Search in array fields
-          if (searchInArray(metadata.aliases) ||
-              searchInArray(metadata.villages_covered) ||
-              searchInArray(metadata.weapons_assets) ||
-              searchInArray(metadata.important_points)) {
+          if (
+            searchInArray(metadata.aliases) ||
+            searchInArray(metadata.villages_covered) ||
+            searchInArray(metadata.weapons_assets) ||
+            searchInArray(metadata.important_points)
+          ) {
             return true;
           }
 
           // Search in criminal activities
-          if (metadata.criminal_activities && searchInArray(metadata.criminal_activities)) {
+          if (
+            metadata.criminal_activities &&
+            searchInArray(metadata.criminal_activities)
+          ) {
             return true;
           }
 
           // Search in police encounters
-          if (metadata.police_encounters && searchInArray(metadata.police_encounters)) {
+          if (
+            metadata.police_encounters &&
+            searchInArray(metadata.police_encounters)
+          ) {
             return true;
           }
 
           // Search in hierarchical role changes
-          if (metadata.hierarchical_role_changes && searchInArray(metadata.hierarchical_role_changes)) {
+          if (
+            metadata.hierarchical_role_changes &&
+            searchInArray(metadata.hierarchical_role_changes)
+          ) {
             return true;
           }
 
           // Search in movement routes
-          if (metadata.movement_routes && Array.isArray(metadata.movement_routes)) {
-            const routeMatch = metadata.movement_routes.some(route => {
-              if (contains(route.route_name) ||
-                  contains(route.description) ||
-                  contains(route.purpose) ||
-                  contains(route.frequency)) {
+          if (
+            metadata.movement_routes &&
+            Array.isArray(metadata.movement_routes)
+          ) {
+            const routeMatch = metadata.movement_routes.some((route) => {
+              if (
+                contains(route.route_name) ||
+                contains(route.description) ||
+                contains(route.purpose) ||
+                contains(route.frequency)
+              ) {
                 return true;
               }
-              
+
               // Search in route segments
               if (route.segments && Array.isArray(route.segments)) {
-                return route.segments.some(segment => 
-                  contains(segment.from) ||
-                  contains(segment.to) ||
-                  contains(segment.description)
+                return route.segments.some(
+                  (segment) =>
+                    contains(segment.from) ||
+                    contains(segment.to) ||
+                    contains(segment.description),
                 );
               }
-              
+
               return false;
             });
-            
+
             if (routeMatch) return true;
           }
         }
 
         // Search in questions analysis
         if (report.questions_analysis && report.questions_analysis.results) {
-          const questionMatch = report.questions_analysis.results.some(result => 
-            contains(result.standard_question) ||
-            contains(result.found_question) ||
-            contains(result.answer)
+          const questionMatch = report.questions_analysis.results.some(
+            (result) =>
+              contains(result.standard_question) ||
+              contains(result.found_question) ||
+              contains(result.answer),
           );
-          
+
           if (questionMatch) return true;
         }
 
@@ -182,7 +214,9 @@ export default function Dashboard() {
 
     if (searchFilters.suspectName) {
       const name = searchFilters.suspectName.toLowerCase();
-      filtered = filtered.filter((report) => report.metadata?.name?.toLowerCase().includes(name));
+      filtered = filtered.filter((report) =>
+        report.metadata?.name?.toLowerCase().includes(name),
+      );
     }
 
     if (searchFilters.location) {
@@ -190,34 +224,51 @@ export default function Dashboard() {
       filtered = filtered.filter(
         (report) =>
           report.metadata?.area_region?.toLowerCase().includes(location) ||
-          (report.metadata?.villages_covered && Array.isArray(report.metadata.villages_covered) && 
-           report.metadata.villages_covered.some((village) => village.toLowerCase().includes(location)))
+          (report.metadata?.villages_covered &&
+            Array.isArray(report.metadata.villages_covered) &&
+            report.metadata.villages_covered.some((village) =>
+              village.toLowerCase().includes(location),
+            )),
       );
     }
 
     if (searchFilters.dateRange?.start) {
-      filtered = filtered.filter((report) => new Date(report.uploaded_at) >= searchFilters.dateRange!.start);
+      filtered = filtered.filter(
+        (report) =>
+          new Date(report.uploaded_at) >= searchFilters.dateRange!.start,
+      );
     }
 
     if (searchFilters.dateRange?.end) {
-      filtered = filtered.filter((report) => new Date(report.uploaded_at) <= searchFilters.dateRange!.end);
+      filtered = filtered.filter(
+        (report) =>
+          new Date(report.uploaded_at) <= searchFilters.dateRange!.end,
+      );
     }
 
     // Manual field filters
     if (searchFilters.police_station) {
-      filtered = filtered.filter((report) => report.police_station === searchFilters.police_station);
+      filtered = filtered.filter(
+        (report) => report.police_station === searchFilters.police_station,
+      );
     }
 
     if (searchFilters.division) {
-      filtered = filtered.filter((report) => report.division === searchFilters.division);
+      filtered = filtered.filter(
+        (report) => report.division === searchFilters.division,
+      );
     }
 
     if (searchFilters.area_committee) {
-      filtered = filtered.filter((report) => report.area_committee === searchFilters.area_committee);
+      filtered = filtered.filter(
+        (report) => report.area_committee === searchFilters.area_committee,
+      );
     }
 
     if (searchFilters.rank) {
-      filtered = filtered.filter((report) => report.rank === searchFilters.rank);
+      filtered = filtered.filter(
+        (report) => report.rank === searchFilters.rank,
+      );
     }
 
     setFilteredReports(filtered);
@@ -237,13 +288,17 @@ export default function Dashboard() {
         const file = files[i];
 
         // Update progress for upload start
-        setUploadProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, progress: 10 } : p)));
+        setUploadProgress((prev) =>
+          prev.map((p, idx) => (idx === i ? { ...p, progress: 10 } : p)),
+        );
 
         // Upload file to Supabase
         const { id, file_url } = await IRReportAPI.uploadFile(file);
 
         // Update progress for upload complete
-        setUploadProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, progress: 30, id } : p)));
+        setUploadProgress((prev) =>
+          prev.map((p, idx) => (idx === i ? { ...p, progress: 30, id } : p)),
+        );
 
         // Create initial report record (without manual details)
         const reportData = {
@@ -259,7 +314,11 @@ export default function Dashboard() {
         const report = await IRReportAPI.createReport(reportData);
 
         // Update progress for processing start
-        setUploadProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, progress: 50, status: "processing" } : p)));
+        setUploadProgress((prev) =>
+          prev.map((p, idx) =>
+            idx === i ? { ...p, progress: 50, status: "processing" } : p,
+          ),
+        );
 
         try {
           // Process with parser
@@ -281,7 +340,11 @@ export default function Dashboard() {
           //console.log("Updated report received:", updatedReport);
 
           // Update progress for completion
-          setUploadProgress((prev) => prev.map((p, idx) => (idx === i ? { ...p, progress: 100, status: "completed" } : p)));
+          setUploadProgress((prev) =>
+            prev.map((p, idx) =>
+              idx === i ? { ...p, progress: 100, status: "completed" } : p,
+            ),
+          );
 
           // Add to reports list
           setReports((prev) => [updatedReport, ...prev]);
@@ -291,7 +354,10 @@ export default function Dashboard() {
           // Update report with error
           await IRReportAPI.updateReport(id, {
             status: "error",
-            error_message: processingError instanceof Error ? processingError.message : "Processing failed",
+            error_message:
+              processingError instanceof Error
+                ? processingError.message
+                : "Processing failed",
           });
 
           // Update progress for error
@@ -302,10 +368,13 @@ export default function Dashboard() {
                     ...p,
                     progress: 100,
                     status: "error",
-                    error: processingError instanceof Error ? processingError.message : "Processing failed",
+                    error:
+                      processingError instanceof Error
+                        ? processingError.message
+                        : "Processing failed",
                   }
-                : p
-            )
+                : p,
+            ),
           );
         }
       }
@@ -317,7 +386,7 @@ export default function Dashboard() {
           ...p,
           status: "error",
           error: error instanceof Error ? error.message : "Upload failed",
-        }))
+        })),
       );
     } finally {
       setUploading(false);
@@ -339,7 +408,10 @@ export default function Dashboard() {
   const handleDownload = async (report: IRReport, type: "pdf") => {
     try {
       if (type === "pdf" && report.file_url) {
-        await IRReportAPI.downloadFile(report.file_url, report.original_filename);
+        await IRReportAPI.downloadFile(
+          report.file_url,
+          report.original_filename,
+        );
       }
     } catch (error) {
       console.error("Download failed:", error);
@@ -347,18 +419,35 @@ export default function Dashboard() {
   };
 
   const handleReportUpdate = (updatedReport: IRReport) => {
-    setReports((prevReports) => prevReports.map((report) => (report.id === updatedReport.id ? updatedReport : report)));
+    setReports((prevReports) =>
+      prevReports.map((report) =>
+        report.id === updatedReport.id ? updatedReport : report,
+      ),
+    );
   };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Upload Section */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <FileUpload onUpload={handleFileUpload} uploading={uploading} uploadProgress={uploadProgress} />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-8"
+      >
+        <FileUpload
+          onUpload={handleFileUpload}
+          uploading={uploading}
+          uploadProgress={uploadProgress}
+        />
       </motion.div>
 
       {/* Search Section */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
         <SearchBar
           filters={searchFilters}
           onFiltersChange={setSearchFilters}
@@ -368,11 +457,18 @@ export default function Dashboard() {
       </motion.div>
 
       {/* Reports Grid */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse">
+              <div
+                key={i}
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-pulse"
+              >
                 <div className="flex items-start space-x-3 mb-4">
                   <div className="w-10 h-10 bg-gray-200 rounded-lg" />
                   <div className="flex-1">
@@ -402,10 +498,22 @@ export default function Dashboard() {
             </AnimatePresence>
           </div>
         ) : (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{reports.length === 0 ? "No reports yet" : "No reports match your search"}</h3>
-            <p className="text-gray-500">{reports.length === 0 ? "Upload your first IR PDF to get started" : "Try adjusting your search criteria"}</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {reports.length === 0
+                ? "No reports yet"
+                : "No reports match your search"}
+            </h3>
+            <p className="text-gray-500">
+              {reports.length === 0
+                ? "Upload your first IR PDF to get started"
+                : "Try adjusting your search criteria"}
+            </p>
           </motion.div>
         )}
       </motion.div>
@@ -422,6 +530,19 @@ export default function Dashboard() {
           />
         )}
       </AnimatePresence>
+      {/* Chatbot */}
+
+      <Chatbot
+        onReportSelect={(reportId) => {
+          const report = reports.find((r) => r.id === reportId);
+
+          if (report) {
+            setSelectedReport(report);
+
+            setShowDetailModal(true);
+          }
+        }}
+      />
     </div>
   );
 }
